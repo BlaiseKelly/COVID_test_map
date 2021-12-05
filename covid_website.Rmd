@@ -1,0 +1,82 @@
+---
+title: "Private PCR test site locations"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: false
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+```
+
+Map
+=======================================================================
+
+
+``` {r worldmet, echo = FALSE, fig.height = 0}
+
+
+library(flexdashboard)
+library(leaflet)
+library(sf)
+
+covid_sites <- readRDS("map_dat.RDS")
+
+cntnt_covid <- paste(paste(
+  covid_sites$Website,
+  paste("Post Code:", covid_sites$pcodes),
+  paste("Start:", covid_sites$Name.of.provider),
+  paste("End:", covid_sites$Region),
+  paste("End:", covid_sites$Email.address),
+  paste("End:", covid_sites$Contact.telephone),
+  sep = "<br/>"))
+
+  test_icon <- makeIcon(
+    iconUrl = "man_nose.png",
+    iconWidth = 70, iconHeight = 50,
+  )
+
+  
+  html_legend <- "<img src='man_nose.png'style='width:70px;height:50px;'> COVID private test sites"
+
+  
+lat = 53.438781
+lon = -2.249466
+
+lu <- paste0("Test sites last updated: ", Sys.Date())
+  
+m <- leaflet() %>%
+      setView(lon, lat, zoom = 10) %>%
+  addProviderTiles("CartoDB.Positron", group = "CartoDB") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Esri Satellite") %>%
+  addProviderTiles("OpenStreetMap", group = "Open Street Map") %>% 
+  addTiles(attribution = lu) %>%
+      addMiniMap() %>%
+      addMarkers(data = covid_sites,
+                       icon = test_icon, popup = cntnt_covid, group = "covid test sites") %>%
+      
+  addControl(html = html_legend, position = "bottomleft") %>% 
+    addLayersControl(overlayGroups = c("covid test sites"),
+                            baseGroups = c("CartoDB", "Esri Satellite", "Open Street Map"),
+                            options = layersControlOptions(collapsed = FALSE), position = "topright")
+
+m
+```
+
+info
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+COVID private test site map
+
+The UK government provides a list of private COVID test providers: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/995458/covid-private-testing-providers-general-testing-220621.csv/preview however no explicit location data is provided.
+
+This map has used the Rselenium server wrapper R package to scrape the postcodes from each website and used the PostcodesioR R package to determine the address of that postcode.
+
+The locations are only a guess and the website should be checked to ensure the test actually takes place at the location.
+
+Map icon credit: https://testcoronavirus.imedhospitales.com/testAntigeno?lg=3
+
